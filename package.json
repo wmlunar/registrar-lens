@@ -1,0 +1,23 @@
+{
+  "name": "registrar-lens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Privacy-first static RDAP registrar lookup for single and batch domain queries.",
+  "homepage": "https://wmlunar.github.io/registrar-lens/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wmlunar/registrar-lens.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wmlunar/registrar-lens/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "check": "node --check public/theme.js && node --check public/app.js && node --check public/rdap.js && node --test",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0"
+}

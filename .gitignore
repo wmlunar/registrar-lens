@@ -1,0 +1,29 @@
+# JavaScript / Node.js
+node_modules/
+coverage/
+.nyc_output/
+dist/
+*.log
+npm-debug.log*
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Legacy Python prototype artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+registrar_ids.db
+registrar_ids.csv
+*.pid
+gunicorn.conf
+.htaccess

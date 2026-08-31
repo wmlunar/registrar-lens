@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="RegistrarLens 是一个隐私优先、无需 API Key 的开源 RDAP 注册商查询工具。">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#eef2f3">
+    <meta name="referrer" content="no-referrer">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src https:; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    >
+    <title>RegistrarLens | 开源 RDAP 注册商查询</title>
+    <script src="./theme.js"></script>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#lookup-panel">跳到查询工具</a>
+
+    <header class="site-header">
+      <div class="shell topbar">
+        <a class="brand" href="./" aria-label="RegistrarLens 首页">
+          <span class="brand-name">RegistrarLens</span>
+          <span class="brand-meta">RDAP lookup</span>
+        </a>
+
+        <nav class="header-actions" aria-label="全局导航">
+          <a
+            class="github-link"
+            href="https://github.com/wmlunar/registrar-lens"
+            target="_blank"
+            rel="noopener noreferrer"
+          >GitHub</a>
+          <label class="visually-hidden" for="theme-select">页面主题</label>
+          <select class="theme-select" id="theme-select" name="theme" aria-label="页面主题">
+            <option value="system">系统</option>
+            <option value="light">浅色</option>
+            <option value="dark">深色</option>
+          </select>
+        </nav>
+      </div>
+    </header>
+
+    <main class="shell page-main">
+      <section class="intro" aria-labelledby="page-title">
+        <div class="intro-copy">
+          <p class="eyebrow">开源 RDAP 查询工具</p>
+          <h1 id="page-title">查清域名背后的注册商</h1>
+          <p class="lead">直接查询权威 RDAP，定位注册商、IANA ID 与关键注册日期。</p>
+        </div>
+
+        <article class="lookup-panel" id="lookup-panel" aria-labelledby="lookup-heading">
+          <div class="panel-heading">
+            <div>
+              <h2 id="lookup-heading">查询域名</h2>
+              <p>请求从你的浏览器发出，无需账号或 API Key。</p>
+            </div>
+            <button class="text-button" id="clear-cache-button" type="button">清除缓存</button>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="查询方式">
+            <button
+              class="tab-button is-active"
+              id="single-tab"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="single-panel"
+              data-tab="single"
+            >单个查询</button>
+            <button
+              class="tab-button"
+              id="batch-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="batch-panel"
+              data-tab="batch"
+              tabindex="-1"
+            >批量查询</button>
+          </div>
+
+          <section
+            class="tab-panel"
+            id="single-panel"
+            role="tabpanel"
+            aria-labelledby="single-tab"
+          >
+            <form id="single-form" novalidate>
+              <div class="field-group">
+                <label for="domain-input">域名或网址</label>
+                <input
+                  id="domain-input"
+                  name="domain"
+                  type="text"
+                  inputmode="url"
+                  autocomplete="off"
+                  autocapitalize="none"
+                  spellcheck="false"
+                  placeholder="example.com 或 https://example.com/path"
+                  aria-describedby="domain-help domain-error"
+                >
+                <div class="field-meta">
+                  <span id="domain-help">支持 URL、子域名和中文域名</span>
+                </div>
+                <p class="field-error" id="domain-error" role="alert" hidden></p>
+              </div>
+              <div class="form-actions">
+                <button class="primary-button query-button" type="submit">查询注册商</button>
+              </div>
+            </form>
+          </section>
+
+          <section
+            class="tab-panel"
+            id="batch-panel"
+            role="tabpanel"
+            aria-labelledby="batch-tab"
+            hidden
+          >
+            <form id="batch-form" novalidate>
+              <div class="field-group">
+                <label for="domains-input">域名列表</label>
+                <textarea
+                  id="domains-input"
+                  name="domains"
+                  rows="7"
+                  autocomplete="off"
+                  autocapitalize="none"
+                  spellcheck="false"
+                  placeholder="example.com&#10;openai.com&#10;www.iana.org"
+                  aria-describedby="domains-help domains-count domains-error"
+                ></textarea>
+                <div class="field-meta">
+                  <span id="domains-help">每行一个，重复域名会自动跳过</span>
+                  <output id="domains-count" for="domains-input">0 / 100</output>
+                </div>
+                <p class="field-error" id="domains-error" role="alert" hidden></p>
+              </div>
+              <div class="form-actions">
+                <button class="primary-button query-button" type="submit">开始批量查询</button>
+              </div>
+            </form>
+          </section>
+
+          <div class="query-progress" id="query-progress" aria-live="polite" hidden>
+            <div class="progress-copy">
+              <strong id="progress-title">正在查询权威 RDAP 服务</strong>
+              <span id="progress-text">已完成 0 / 1</span>
+            </div>
+            <progress id="progress-bar" value="0" max="1">0%</progress>
+            <p>为避免触发服务限流，同一时间最多发出 3 个请求。</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="results-section" aria-labelledby="results-heading">
+        <div class="results-heading-row">
+          <div>
+            <h2 id="results-heading">查询结果</h2>
+            <p id="results-summary">还没有查询记录</p>
+          </div>
+          <div class="result-actions" id="result-actions" hidden>
+            <button class="secondary-button" id="export-button" type="button">导出 CSV</button>
+            <button class="text-button" id="clear-results-button" type="button">清空结果</button>
+          </div>
+        </div>
+
+        <div class="state-panel" id="empty-state">
+          <p class="state-label">等待查询</p>
+          <h3>结果会显示在这里</h3>
+          <p>输入一个域名，或切换到批量查询一次处理最多 100 个。</p>
+        </div>
+
+        <div class="state-panel loading-state" id="loading-state" aria-live="polite" hidden>
+          <p class="state-label">正在连接</p>
+          <h3>正在获取权威注册数据</h3>
+          <p>不同域名后缀的响应速度可能不同，请稍候。</p>
+          <div class="skeleton-table" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+
+        <div class="state-panel error-state" id="error-state" role="alert" hidden>
+          <p class="state-label">查询未完成</p>
+          <h3 id="error-title">无法完成查询</h3>
+          <p id="error-detail">请稍后重试。</p>
+        </div>
+
+        <div class="table-wrapper" id="results-table-wrapper" hidden>
+          <table>
+            <caption class="visually-hidden">RDAP 注册商查询结果</caption>
+            <thead>
+              <tr>
+                <th scope="col">域名</th>
+                <th scope="col">注册商</th>
+                <th scope="col">IANA ID</th>
+                <th scope="col">状态</th>
+                <th scope="col">关键日期</th>
+                <th scope="col">数据来源</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-content">
+        <p>数据由 IANA Bootstrap 指向的权威 RDAP 服务提供。</p>
+        <p>结果仅供参考，不作为注册权属证明。</p>
+      </div>
+    </footer>
+
+    <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+
+    <noscript>
+      <div class="noscript-message">此工具需要启用 JavaScript 才能查询 RDAP 数据。</div>
+    </noscript>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

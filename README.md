@@ -1,115 +1,119 @@
-# IANA ID 查询系统
+# RegistrarLens
 
-一个基于Flask的IANA注册商ID查询网站，支持通过域名查询相关的注册商信息。
+RegistrarLens 是一个静态、隐私优先的域名注册商解析工具。它直接使用 IANA RDAP 引导数据和注册局的权威 RDAP 服务，支持单个或批量查询、结果追溯与 CSV 导出；不需要账号、API Key、数据库或自建查询后端。
 
-## 功能特性
+[在线使用](https://wmlunar.github.io/registrar-lens/) · [报告问题](https://github.com/wmlunar/registrar-lens/issues)
 
-- 🔍 **单个域名查询**：支持多种格式的域名输入
-- 📋 **批量查询**：一次性查询多个域名
-- 🌐 **智能域名解析**：自动从URL中提取域名核心部分
-- 📊 **详细信息展示**：显示注册商ID、名称、状态和RDAP URL
-- 📱 **响应式设计**：支持桌面和移动设备
+> gTLD（如 `.com`、`.net`、`.org`）的 RDAP 数据通常更规范，解析相对可靠。ccTLD 的字段和开放程度差异较大，本项目只能尽力返回结果，**不承诺覆盖所有域名**。
 
-## 支持的输入格式
+## 功能
 
-系统可以智能解析以下格式的域名输入：
+- 单个域名与批量域名查询
+- 从 URL 或域名输入中提取并规范化域名
+- 查询真实的权威 RDAP 数据，而不是在注册商清单中做字符串匹配
+- 解析注册商名称、IANA Registrar ID、查询来源和失败原因
+- 在浏览器中生成并下载 CSV
+- 纯静态部署，无项目自有查询服务器
+- 无运行时依赖、无 API Key
 
-- `nawang.cn`
-- `www.nawang.cn`
-- `https://www.zzy.cn/domain/`
-- `http://example.com/path`
+## 本地运行
 
-系统会自动提取域名的核心部分（如：nawang、zzy、example）进行查询。
+无需安装项目依赖。克隆仓库后，在项目根目录任选一种方式启动静态服务器：
 
-## 安装和运行
-
-### 环境要求
-
-- Python 3.7+
-- pip
-
-### 安装步骤
-
-1. 克隆或下载项目文件
-2. 安装依赖包：
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. 确保`registrar_ids.csv`文件在项目根目录
-4. 运行应用：
-   ```bash
-   python app.py
-   ```
-5. 打开浏览器访问：`http://localhost:5000`
-
-## 文件结构
-
-```
-flask_naia/
-├── app.py                 # Flask应用主文件
-├── requirements.txt       # Python依赖包
-├── registrar_ids.csv     # IANA注册商数据
-├── templates/
-│   └── index.html        # 主页模板
-└── README.md             # 项目说明
+```bash
+python -m http.server -d public 8000
 ```
 
-## API接口
+或：
 
-### 单个域名查询
-- **URL**: `/search`
-- **方法**: POST
-- **参数**: `{"domain": "domain_name"}`
-- **返回**: 查询结果JSON
+```bash
+npx serve public
+```
 
-### 批量域名查询
-- **URL**: `/batch_search`
-- **方法**: POST
-- **参数**: `{"domains": ["domain1", "domain2", ...]}`
-- **返回**: 批量查询结果JSON
+随后打开 `http://localhost:8000`。请通过本地 HTTP 服务器访问，不建议直接双击 `public/index.html`，因为浏览器对 ES modules 和跨域请求有额外限制。
 
-### 获取所有注册商
-- **URL**: `/api/registrars`
-- **方法**: GET
-- **返回**: 所有注册商信息JSON
+运行测试需要 Node.js 22 或更高版本：
 
-## 技术栈
+```bash
+npm test
+```
 
-- **后端**: Flask (Python)
-- **前端**: HTML5, CSS3, JavaScript
-- **数据处理**: pandas
-- **域名解析**: tldextract
-- **样式**: 响应式CSS Grid/Flexbox
+## 工作原理
+
+```text
+用户浏览器
+  ├─ 获取 IANA DNS RDAP Bootstrap
+  ├─ 按顶级域选择权威注册局 RDAP 服务
+  ├─ 查询 /domain/{domain}
+  ├─ 从 registrar entity / publicIds 解析注册商信息
+  └─ 在本地展示并导出 CSV
+```
+
+项目没有通用代理服务，也不提供公共批量查询 API。查询流量从使用者的浏览器直接发出，有助于把运行成本和数据留存降到最低。
 
 ## 数据来源
 
-注册商数据来源于IANA（Internet Assigned Numbers Authority）官方数据，包含：
-- 注册商ID
-- 注册商名称
-- 状态（Accredited/Reserved/Terminated）
-- RDAP基础URL
+- [IANA RDAP Bootstrap Service Registry](https://data.iana.org/rdap/dns.json)：把顶级域映射到对应的权威 RDAP 服务。
+- 各注册局或运营方公开的 RDAP 响应：提供域名实体及其注册商信息。
+- RDAP 标准：[RFC 9082](https://www.rfc-editor.org/rfc/rfc9082) 与 [RFC 9083](https://www.rfc-editor.org/rfc/rfc9083)。
 
-## 使用说明
+RegistrarLens 不维护一份声称完整的注册商结果数据库；每次未命中本地浏览器缓存的查询以权威 RDAP 响应为准。
 
-1. **单个查询**：在输入框中输入域名或URL，点击查询按钮
-2. **批量查询**：切换到批量查询标签，每行输入一个域名，点击批量查询按钮
-3. **查看结果**：系统会显示匹配的注册商信息，包括详细的注册商数据
+## 隐私
 
-## 注意事项
+- 无账号、无统计脚本、无项目自有数据库。
+- 域名列表、查询结果和 CSV 生成均在浏览器端处理。
+- 为完成查询，浏览器会向 IANA 和相应的 RDAP 服务发送请求；这些第三方会看到访问者 IP、请求域名以及常规 HTTP 元数据，并适用其各自的隐私政策。
+- 浏览器可能在本地保存缓存。清除该站点的浏览器数据即可移除。
+- 如果你不希望第三方 RDAP 服务看到批量请求，请勿提交敏感域名列表。
 
-- 查询基于注册商名称的模糊匹配
-- 系统会自动去除www前缀和URL路径
-- 支持国际化域名
-- 结果按相关性排序
+## 已知限制
 
-## 开发和扩展
+- 部分 ccTLD 不公开注册商、没有 IANA Registrar ID，或使用非标准结构。
+- 某些 RDAP 服务未开放浏览器跨域访问（CORS），即使该域名存在也可能查询失败。
+- 权威服务可能限速、超时、暂时不可用，批量查询尤其容易触发限制。
+- 域名输入规范化不能替代完整的公共后缀判断；特殊私有后缀可能无法按预期处理。
+- 注册商名称、IANA ID 和域名状态取决于上游数据质量与更新时间。
+- 查询结果仅供信息参考，不构成域名权属、法律状态或合规证明。
 
-如需扩展功能，可以考虑：
-- 集成WHOIS API进行实时查询
-- 添加域名历史信息
-- 支持更多查询条件
-- 添加导出功能
+遇到失败时，请查看界面给出的失败原因和 RDAP 来源，稍后重试，或直接访问对应注册局的查询服务核验。
+
+## 免费部署
+
+### GitHub Pages
+
+仓库自带 GitHub Actions 工作流。推送到 `main` 后，它会先运行测试，再把 `public/` 作为 Pages 站点发布。
+
+首次部署前，在仓库的 **Settings → Pages → Build and deployment** 中把 Source 设为 **GitHub Actions**。此后无需构建服务器或长期运行的进程。
+
+### Cloudflare Pages
+
+在 Cloudflare Pages 中连接此仓库，并使用以下设置：
+
+- Framework preset：`None`
+- Build command：留空
+- Build output directory：`public`
+
+静态版本通常可在免费额度内长期运行。实际额度和平台政策可能变化，请以服务商当前规则为准。
+
+## 项目结构
+
+```text
+public/index.html       静态页面入口
+public/styles.css       响应式界面样式
+public/theme.js         首屏主题初始化
+public/app.js           查询交互与 CSV 导出
+public/rdap.js          零依赖 RDAP 查询核心
+tests/                  Node.js 离线单元测试
+.github/workflows/      持续集成与 Pages 发布
+```
+
+当前产品入口是 `public/`。原有 Flask 原型和静态注册商快照已从当前版本移除，需要时仍可从 Git 历史中查看。
+
+## 贡献
+
+欢迎提交问题、测试用例和改进。开始前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
 
 ## 许可证
 
-本项目仅用于学习和研究目的。
+本项目采用 [Apache License 2.0](LICENSE)。
